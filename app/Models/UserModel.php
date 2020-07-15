@@ -40,4 +40,31 @@ class UserModel
 
         return new ErrorHandleableReturnBoolean(true);
     }
+
+    /**
+     * 更新密碼
+     *
+     * @param  User $user
+     * @param  string $hashedPassword
+     * @return ErrorHandleableReturnBoolean
+     */
+    public function updatePassword(User $user, string $hashedPassword) : ErrorHandleableReturnBoolean
+    {
+        $querySyntax = "
+            UPDATE `user`
+            SET    `password` = :password
+            WHERE  `id` = :id";
+
+        $bindingValues = array();
+        $bindingValues['password'] = $hashedPassword;
+        $bindingValues['id'] = $user->getId();
+
+        $updateReturns = QueryExecutor::update($querySyntax, $bindingValues);
+        if ($updateReturns->hasError()) {
+            return new ErrorHandleableReturnBoolean(false, $updateReturns->getError());
+        }
+
+        $effectRows = $updateReturns->getValue();
+        return new ErrorHandleableReturnBoolean($effectRows > 0);
+    }
 }
