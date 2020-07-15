@@ -5,6 +5,7 @@ namespace App\Models;
 use App\Classes\DatabaseHelper\QueryExecutor;
 use App\Classes\User;
 use App\Classes\Error\Error;
+use App\Classes\ErrorHandling\ErrorHandleableReturnArray;
 use App\Classes\ErrorHandling\ErrorHandleableReturnBoolean;
 
 class UserModel
@@ -65,6 +66,30 @@ class UserModel
         }
 
         $effectRows = $updateReturns->getValue();
+        return new ErrorHandleableReturnBoolean($effectRows > 0);
+    }
+
+    /**
+     * 透過帳號刪除使用者
+     *
+     * @param  User $user
+     * @return ErrorHandleableReturnBoolean
+     */
+    public function deleteByAccount(User $user) : ErrorHandleableReturnBoolean
+    {
+        $querySyntax = '
+            DELETE FROM `user`
+            WHERE  `account` = :account';
+
+        $bindingValues = array();
+        $bindingValues['account'] = $user->getAccount();
+
+        $deleteReturns = QueryExecutor::delete($querySyntax, $bindingValues);
+        if ($deleteReturns->hasError()) {
+            return new ErrorHandleableReturnBoolean(false, $deleteReturns->getError());
+        }
+
+        $effectRows = $deleteReturns->getValue();
         return new ErrorHandleableReturnBoolean($effectRows > 0);
     }
 }
