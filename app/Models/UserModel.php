@@ -3,9 +3,9 @@
 namespace App\Models;
 
 use App\Classes\DatabaseHelper\QueryExecutor;
+use App\Classes\ErrorHandling\ErrorHandleableReturnUser;
 use App\Classes\User;
 use App\Classes\Error\Error;
-use App\Classes\ErrorHandling\ErrorHandleableReturnArray;
 use App\Classes\ErrorHandling\ErrorHandleableReturnBoolean;
 
 class UserModel
@@ -91,5 +91,36 @@ class UserModel
 
         $effectRows = $deleteReturns->getValue();
         return new ErrorHandleableReturnBoolean($effectRows > 0);
+    }
+
+    /**
+     * 透過帳號取得使用者
+     *
+     * @param  string $account
+     * @return ErrorHandleableReturnUser
+     */
+    public function getByAccount(string $account) : ErrorHandleableReturnUser
+    {
+        $querySyntax = '
+            SELECT *
+            FROM   `user`
+            WHERE  `account` = :account';
+
+        $bindingValues = array();
+        $bindingValues['account'] = $account;
+
+        $selectedReturns = QueryExecutor::select($querySyntax, $bindingValues);
+        if ($selectedReturns->hasError()) {
+            return new ErrorHandleableReturnUser(new User(), $selectedReturns->getError());
+        }
+
+        $selectedValues = $selectedReturns->getValue();
+        if (empty($selectedValues)) {
+            return new ErrorHandleableReturnUser(new User(), new Error(Error::RESOURCE_NOT_FOUND));
+        }
+
+        $user = new User();
+        $user->loadFromArray(array_shift($selectedValues));
+        return new ErrorHandleableReturnUser($user);
     }
 }
