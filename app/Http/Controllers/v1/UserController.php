@@ -64,4 +64,33 @@ class UserController extends Controller
             , Response::HTTP_OK
         );
     }
+
+    /**
+     * 刪除使用者
+     *
+     * @return JsonResponse
+     * @throws InvalidInputValueException
+     */
+    public function delete() : JsonResponse
+    {
+        $this->requiredStringRangeFromInput('Account', 1, 50);
+        $account = Request::get('Account');
+
+        $deleteUser = new User();
+        $deleteUser->setAccount($account);
+
+        $userModel = new UserModel();
+        $deleteUserReturns = $userModel->deleteByAccount($deleteUser);
+        if ($deleteUserReturns->hasError()) {
+            return ResponseCreator::createResponse(
+                OutputConverter::convertResult(false, new ApiError(ApiError::INTERNAL_SERVER_ERROR))
+                , Response::HTTP_INTERNAL_SERVER_ERROR
+            );
+        }
+
+        return ResponseCreator::createResponse(
+            OutputConverter::convertResult(true)
+            , Response::HTTP_OK
+        );
+    }
 }
