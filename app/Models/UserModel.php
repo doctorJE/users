@@ -123,4 +123,32 @@ class UserModel
         $user->loadFromArray(array_shift($selectedValues));
         return new ErrorHandleableReturnUser($user);
     }
+
+    /**
+     * 檢查帳號是否存在
+     *
+     * @param  string $account
+     * @return ErrorHandleableReturnBoolean
+     */
+    public function isAccountExisted(string $account) : ErrorHandleableReturnBoolean
+    {
+        $querySyntax = '
+            SELECT `id`
+            FROM   `user`
+            WHERE  `account` = :account';
+
+        $bindingValues = array();
+        $bindingValues['account'] = $account;
+
+        $selectedReturns = QueryExecutor::select($querySyntax, $bindingValues);
+        if ($selectedReturns->hasError()) {
+            return new ErrorHandleableReturnBoolean(false, $selectedReturns->getError());
+        }
+
+        $selectedValues = $selectedReturns->getValue();
+        if (empty($selectedValues)) {
+            return new ErrorHandleableReturnBoolean(false);
+        }
+        return new ErrorHandleableReturnBoolean(true);
+    }
 }
