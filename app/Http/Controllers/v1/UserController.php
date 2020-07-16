@@ -93,4 +93,52 @@ class UserController extends Controller
             , Response::HTTP_OK
         );
     }
+
+    /**
+     * 變更使用者密碼
+     *
+     * @return JsonResponse
+     * @throws InvalidInputValueException
+     */
+    public function changePassword() : JsonResponse
+    {
+        $this->requiredStringRangeFromInput('Account', 1, 50);
+        $this->requiredStringRangeFromInput('Password', 1, 50);
+        $account = Request::get('Account');
+        $password = Request::get('Password');
+
+        $userModel = new UserModel();
+        $getExistedUserReturns = $userModel->getByAccount($account);
+        if ($getExistedUserReturns->hasError()) {
+            if ($getExistedUserReturns->getError()->getCode() == Error::RESOURCE_NOT_FOUND) {
+                return ResponseCreator::createResponse(
+                    OutputConverter::convertResult(false, new ApiError(ApiError::USER_NOT_FOUND))
+                    , Response::HTTP_NOT_FOUND
+                );
+            }
+            if ($getExistedUserReturns->getError()->getCode() == Error::DATABASE_ERROR) {
+                return ResponseCreator::createResponse(
+                    OutputConverter::convertResult(false, new ApiError(ApiError::INTERNAL_SERVER_ERROR))
+                    , Response::HTTP_INTERNAL_SERVER_ERROR
+                );
+            }
+        }
+        $existedUser = $getExistedUserReturns->getValue();
+
+        if ( ! $existedUser->isPasswordCorrect($password)) {
+            $hashedPassword = password_hash($password, PASSWORD_BCRYPT);
+            $updatePasswordReturns = $userModel->updatePassword($existedUser, $hashedPassword);
+            if ($updatePasswordReturns->hasError()) {
+                return ResponseCreator::createResponse(
+                    OutputConverter::convertResult(false, new ApiError(ApiError::INTERNAL_SERVER_ERROR))
+                    , Response::HTTP_INTERNAL_SERVER_ERROR
+                );
+            }
+        }
+
+        return ResponseCreator::createResponse(
+            OutputConverter::convertResult(true)
+            , Response::HTTP_OK
+        );
+    }
 }
