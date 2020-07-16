@@ -141,4 +141,48 @@ class UserController extends Controller
             , Response::HTTP_OK
         );
     }
+
+    /**
+     * 驗證帳號密碼
+     *
+     * @return JsonResponse
+     * @throws InvalidInputValueException
+     */
+    public function login() : JsonResponse
+    {
+        $this->requiredStringRangeFromInput('Account', 1, 50);
+        $this->requiredStringRangeFromInput('Password', 1, 50);
+        $account = Request::get('Account');
+        $password = Request::get('Password');
+
+        $userModel = new UserModel();
+        $getExistedUserReturns = $userModel->getByAccount($account);
+        if ($getExistedUserReturns->hasError()) {
+            if ($getExistedUserReturns->getError()->getCode() == Error::RESOURCE_NOT_FOUND) {
+                return ResponseCreator::createResponse(
+                    OutputConverter::convertResult(null, new ApiError(ApiError::USER_NOT_FOUND))
+                    , Response::HTTP_NOT_FOUND
+                );
+            }
+            if ($getExistedUserReturns->getError()->getCode() == Error::DATABASE_ERROR) {
+                return ResponseCreator::createResponse(
+                    OutputConverter::convertResult(null, new ApiError(ApiError::INTERNAL_SERVER_ERROR))
+                    , Response::HTTP_INTERNAL_SERVER_ERROR
+                );
+            }
+        }
+        $existedUser = $getExistedUserReturns->getValue();
+
+        if ( ! $existedUser->isPasswordCorrect($password)) {
+            return ResponseCreator::createResponse(
+                OutputConverter::convertResult(null, new ApiError(ApiError::INCORRECT_USERNAME_OR_PASSWORD))
+                , Response::HTTP_BAD_REQUEST
+            );
+        }
+
+        return ResponseCreator::createResponse(
+            OutputConverter::convertResult(null),
+            Response::HTTP_OK
+        );
+    }
 }

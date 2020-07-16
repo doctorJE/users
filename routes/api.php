@@ -19,5 +19,6 @@ Route::group(['namespace' => 'v1', 'prefix' => 'v1'], function () {
         Route::post('/create', 'UserController@create');
         Route::post('/delete', 'UserController@delete');
         Route::post('/pwd/change', 'UserController@changePassword');
+        Route::get('/login', 'UserController@login');
     });
 });
